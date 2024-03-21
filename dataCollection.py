@@ -33,7 +33,7 @@ def extract_keypoints(results):
 DATA_PATH = os.path.join('MP_Data')
 
 # Actions we want to detect
-actions = np.array(['hello', 'thanks', 'iloveyou'])
+actions = np.array(['hello', 'leo', 'my', 'name'])
 
 no_sequences = 30
 sequence_length = 30
