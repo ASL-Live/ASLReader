@@ -163,3 +163,4 @@ cython_debug/
 
 *.jpg
 /MP_Data
+*.mp4
