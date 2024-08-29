@@ -37,7 +37,7 @@ mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 
 # Actions we want to detect
-actions = np.array(['hello', 'thank you'])
+actions = np.array(['hello', 'please', 'thank you'])
 
 label_map = {label: num for num, label in enumerate(actions)}
 
