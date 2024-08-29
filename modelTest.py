@@ -7,12 +7,11 @@ from tensorflow.keras.models import load_model
 model = load_model('model.h5')
 
 # Actions the model was trained on
-actions = np.array(['hello', 'thank you'])
+actions = np.array(['hello', 'please', 'thank you'])
 
 # Set up MediaPipe Holistic model
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
-
 
 # Function to perform mediapipe detection
 def mediapipe_detection(image, model):
@@ -23,13 +22,11 @@ def mediapipe_detection(image, model):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # Convert the color back to BGR
     return image, results
 
-
 # Function to draw landmarks
 def draw_landmarks(image, results):
     mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS)
     mp_drawing.draw_landmarks(image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
     mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
-
 
 # Function to extract keypoints and reduce dimensionality
 def extract_keypoints(results):
@@ -41,7 +38,6 @@ def extract_keypoints(results):
                    results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(
         21 * 3)
     return np.concatenate([pose, lh, rh])
-
 
 # Initialize variables for real-time detection
 sequence = []
@@ -64,24 +60,26 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
         image, results = mediapipe_detection(frame, holistic)
         draw_landmarks(image, results)
 
-        # Extract keypoints and make predictions
-        keypoints = extract_keypoints(results)
-        sequence.append(keypoints)
-        sequence = sequence[-30:]
+        # Check if hands are detected
+        if results.left_hand_landmarks or results.right_hand_landmarks:
+            # Extract keypoints and make predictions
+            keypoints = extract_keypoints(results)
+            sequence.append(keypoints)
+            sequence = sequence[-30:]
 
-        if len(sequence) == 30:
-            res = model.predict(np.expand_dims(sequence, axis=0))[0]
-            predictions.append(np.argmax(res))
+            if len(sequence) == 30:
+                res = model.predict(np.expand_dims(sequence, axis=0))[0]
+                predictions.append(np.argmax(res))
 
-            confidence = res[np.argmax(res)]
-            action = actions[np.argmax(res)]
+                confidence = res[np.argmax(res)]
+                action = actions[np.argmax(res)]
 
-            if confidence > threshold:
-                if len(sentence) == 0 or (sentence[-1] != action):
-                    sentence.append(action)
+                if confidence > threshold:
+                    if len(sentence) == 0 or (sentence[-1] != action):
+                        sentence.append(action)
 
-                # Print the detected word and its confidence to the terminal
-                print(f"Detected: {action} with confidence {confidence:.2f}")
+                    # Print the detected word and its confidence to the terminal
+                    print(f"Detected: {action} with confidence {confidence:.2f}")
 
         # Display the detected action
         cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
