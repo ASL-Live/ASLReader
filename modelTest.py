@@ -41,7 +41,6 @@ def extract_keypoints(results):
 
 # Initialize variables for real-time detection
 sequence = []
-sentence = []
 predictions = []
 threshold = 0.8
 
@@ -75,15 +74,12 @@ with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=
                 action = actions[np.argmax(res)]
 
                 if confidence > threshold:
-                    if len(sentence) == 0 or (sentence[-1] != action):
-                        sentence.append(action)
-
                     # Print the detected word and its confidence to the terminal
                     print(f"Detected: {action} with confidence {confidence:.2f}")
 
-        # Display the detected action
-        cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
-        cv2.putText(image, ' '.join(sentence), (3, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+                    # Display the detected action
+                    cv2.rectangle(image, (0, 0), (640, 40), (245, 117, 16), -1)
+                    cv2.putText(image, action, (3, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
         # Show the video feed
         cv2.imshow('Feed', image)
