@@ -5,10 +5,10 @@ import mediapipe as mp
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout, Bidirectional
-from tensorflow.keras.callbacks import TensorBoard
-from keras.optimizers import Adam
-from keras.regularizers import l2
+from tensorflow.keras.layers import LSTM, GRU, Dense, Dropout, Bidirectional
+from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ReduceLROnPlateau
+from keras.optimizers import Adam, RMSprop
+from keras.regularizers import l2, l1_l2
 from sklearn.metrics import multilabel_confusion_matrix, accuracy_score
 
 def mediapipe_detection(image, model):
@@ -24,11 +24,23 @@ def draw_landmarks(image, results):
     mp_drawing.draw_landmarks(image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
     mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
 
+def normalize_landmarks(landmarks, image_shape):
+    return np.array([[res.x / image_shape[1], res.y / image_shape[0], res.z] for res in landmarks]).flatten()
+
 def extract_keypoints(results):
-    pose = np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(132)
-    lh = np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten() if results.left_hand_landmarks else np.zeros(21*3)
-    rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(21*3)
+    pose = normalize_landmarks(results.pose_landmarks.landmark, (480, 640)) if results.pose_landmarks else np.zeros(132)
+    lh = normalize_landmarks(results.left_hand_landmarks.landmark, (480, 640)) if results.left_hand_landmarks else np.zeros(21*3)
+    rh = normalize_landmarks(results.right_hand_landmarks.landmark, (480, 640)) if results.right_hand_landmarks else np.zeros(21*3)
     return np.concatenate([pose, lh, rh])
+
+def augment_data(sequence):
+    augmented_sequence = []
+    for frame in sequence:
+        augmented_frame = frame.copy()
+        # Flip x-coordinates: For each set of (x, y, z), flip the x value
+        augmented_frame[::3] = -augmented_frame[::3]  # Flip every third value starting from index 0 (x-coordinates)
+        augmented_sequence.append(augmented_frame)
+    return augmented_sequence
 
 # Path for the exported data (numpy arrays)
 DATA_PATH = os.path.join('MP_Data')
@@ -63,6 +75,11 @@ for action in actions:
         sequences.append(window)
         labels.append(label_map[action])
 
+        # Apply augmentation
+        augmented_seq = augment_data(window)
+        sequences.append(augmented_seq)
+        labels.append(label_map[action])
+
 # Set up data for training
 x = np.array(sequences)
 y = to_categorical(labels).astype(int)
@@ -71,22 +88,25 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.05)
 log_dir = os.path.join('Logs')
 tb_callback = TensorBoard(log_dir=log_dir)
 
+# Callbacks
+early_stopping = EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, min_lr=1e-6)
+
 # Model creation
 model = Sequential()
-model.add(Bidirectional(LSTM(128, return_sequences=True, activation='relu', input_shape=(x_train.shape[1], x_train.shape[2]))))
-model.add(Dropout(0.2))
-model.add(LSTM(64, return_sequences=False, activation='relu'))
+model.add(Bidirectional(GRU(128, return_sequences=True, activation='relu', input_shape=(x_train.shape[1], x_train.shape[2]))))
+model.add(Dropout(0.3))
+model.add(GRU(64, return_sequences=False, activation='relu'))
 model.add(Dense(64, activation='relu', kernel_regularizer=l2(0.01)))
-model.add(Dense(32, activation='relu', kernel_regularizer=l2(0.01)))
+model.add(Dense(32, activation='relu', kernel_regularizer=l1_l2(l1=0.01, l2=0.01)))
 model.add(Dense(actions.shape[0], activation='softmax'))
 
-# Set learning rate to train the model slower
-learning_rate = 0.0001
-optimizer = Adam(learning_rate=learning_rate)
+# Use RMSprop optimizer with a lower learning rate
+optimizer = RMSprop(learning_rate=0.0001)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 # Train the model
-model.fit(x_train, y_train, epochs=170, callbacks=[tb_callback])
+model.fit(x_train, y_train, epochs=300, validation_split=0.1, callbacks=[tb_callback, early_stopping, reduce_lr])
 
 # Evaluate the model
 yhat = model.predict(x_test)
