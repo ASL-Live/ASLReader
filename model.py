@@ -49,7 +49,7 @@ mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 
 # Actions we want to detect
-actions = np.array(['hello', 'please', 'thank you'])
+actions = np.array(['busy', 'deaf', 'excuse me', 'fine', 'good', 'goodbye', 'hard of hearing', 'hearing', 'hello', 'help', 'how', 'please', 'thank you'])
 
 label_map = {label: num for num, label in enumerate(actions)}
 
@@ -106,7 +106,7 @@ optimizer = RMSprop(learning_rate=0.0001)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 # Train the model
-model.fit(x_train, y_train, epochs=300, validation_split=0.1, callbacks=[tb_callback, early_stopping, reduce_lr])
+model.fit(x_train, y_train, epochs=100, validation_split=0.1, callbacks=[tb_callback, early_stopping, reduce_lr])
 
 # Evaluate the model
 yhat = model.predict(x_test)
