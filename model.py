@@ -106,7 +106,7 @@ optimizer = RMSprop(learning_rate=0.0001)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 # Train the model
-model.fit(x_train, y_train, epochs=100, validation_split=0.1, callbacks=[tb_callback, early_stopping, reduce_lr])
+model.fit(x_train, y_train, epochs=170, validation_split=0.1, callbacks=[tb_callback, early_stopping, reduce_lr])
 
 # Evaluate the model
 yhat = model.predict(x_test)

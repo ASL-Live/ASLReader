@@ -64,13 +64,13 @@ for action_folder in os.listdir(VIDEOS_PATH):
                     if cv2.waitKey(10) & 0xFF == ord('q'):
                         break
 
-            # Downsample the sequence if it has more than 30 frames
-            if len(keypoints_list) > 30:
-                indices = np.linspace(0, len(keypoints_list) - 1, 30).astype(int)
+            # Downsample the sequence if it has more than 60 frames
+            if len(keypoints_list) > 60:
+                indices = np.linspace(0, len(keypoints_list) - 1, 60).astype(int)
                 keypoints_list = [keypoints_list[i] for i in indices]
 
-            # If the sequence has fewer than 30 frames, duplicate the last frame
-            while len(keypoints_list) < 30:
+            # If the sequence has fewer than 60 frames, duplicate the last frame
+            while len(keypoints_list) < 60:
                 keypoints_list.append(keypoints_list[-1])  # Duplicate the last frame
 
             # Save the keypoints
