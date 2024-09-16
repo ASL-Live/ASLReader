@@ -29,6 +29,8 @@ def smooth_keypoints(keypoints_list, window_size=5):
 # Perform MediaPipe detection
 def mediapipe_detection(image, model):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    if image is None:
+        print("Error: Image not found or unable to load the image.")
     image.flags.writeable = False
     results = model.process(image)
     image.flags.writeable = True
@@ -81,7 +83,7 @@ def extract_keypoints(results):
 
 # Paths for the data and videos
 DATA_PATH = os.path.join('MP_Data')
-VIDEOS_PATH = 'ASL_Videos'  # Path to the folder containing your videos
+VIDEOS_PATH = 'videos'  # Path to the folder containing your videos
 
 # Fixed resolution for all videos
 FIXED_RESOLUTION = (640, 480)  # Example resolution (width, height)
@@ -114,28 +116,25 @@ for action_folder in os.listdir(VIDEOS_PATH):
                     # Resize the frame to the fixed resolution
                     frame = cv2.resize(frame, FIXED_RESOLUTION)
 
-
-                # Draw Landmarks
-                draw_styled_landmarks(image, results)
-                    # Perform detection and extract results
-                    image, results = mediapipe_detection(frame, holistic)
-                    draw_landmarks(image, results)
+                # Perform detection and extract results
+                image, results = mediapipe_detection(frame, holistic)
+                draw_landmarks(image, results)
 
 
-                    keypoints = extract_keypoints(results)
+                keypoints = extract_keypoints(results)
 
-                    # Augment keypoints
-                    augmented_keypoints = augment_keypoints(keypoints)
+                # Augment keypoints
+                augmented_keypoints = augment_keypoints(keypoints)
 
-                    # Normalize keypoints
-                    normalized_keypoints = normalize_keypoints(augmented_keypoints)
+                # Normalize keypoints
+                normalized_keypoints = normalize_keypoints(augmented_keypoints)
 
-                    # Append normalized keypoints to the list
-                    keypoints_list.append(normalized_keypoints)
+                # Append normalized keypoints to the list
+                keypoints_list.append(normalized_keypoints)
 
-                    cv2.imshow('Feed', image)
-                    if cv2.waitKey(10) & 0xFF == ord('q'):
-                        break
+                cv2.imshow('Feed', image)
+                if cv2.waitKey(10) & 0xFF == ord('q'):
+                    break
 
             # Smooth keypoints to reduce noise
             keypoints_list = smooth_keypoints(keypoints_list)
@@ -156,5 +155,4 @@ for action_folder in os.listdir(VIDEOS_PATH):
                 np.save(npy_path, keypoints)
 
             cap.release()
-
-cv2.destroyAllWindows()
+            cv2.destroyAllWindows()
