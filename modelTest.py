@@ -9,7 +9,7 @@ from tensorflow.keras.models import load_model
 model = load_model('model.h5')
 
 # Actions the model was trained on
-actions = np.array(['busy', 'deaf', 'excuse me', 'fine', 'good', 'goodbye', 'hard of hearing', 'hearing', 'hello', 'help', 'how', 'please', 'thank you'])
+actions = np.array(['busy', 'deaf', 'excuse me', 'fine', 'good', 'hard of hearing', 'hearing','help'])
 
 # Set up MediaPipe Holistic model
 mp_holistic = mp.solutions.holistic
