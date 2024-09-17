@@ -100,7 +100,7 @@ frameInputShape = (64, 64, 3)
 sequenceLength = 30
 # Model creation
 model = Sequential()
-model.add(S(layers.Conv2D(filters=32, kernel_size = (3, 3),activation='relu', input_shape=(sequenceLength, x_train.shape[2]))))
+model.add(layers.TimeDistributed(layers.Conv2D(filters=32, kernel_size = (3, 3),activation='relu', input_shape=(sequenceLength, x_train.shape[2]))))
 
 model.add(layers.TimeDistributed(layers.MaxPooling2D((2, 2))))
 model.add(layers.TimeDistributed(layers.Conv2D(64, (3, 3), activation='relu')))
