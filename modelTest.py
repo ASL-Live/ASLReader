@@ -8,30 +8,19 @@ from tensorflow.keras.models import load_model
 # Load the trained model
 model = load_model('model.h5')
 
+# Load global mean and std
+global_mean = np.load('global_mean.npy')
+global_std = np.load('global_std.npy')
+
+def normalize_keypoints(keypoints):
+    return (keypoints - global_mean) / global_std
+
 # Actions the model was trained on
-actions = np.array(['busy', 'deaf', 'excuse me', 'fine', 'good', 'hard of hearing', 'hearing','help'])
+actions = np.array(['busy', 'deaf', 'excuse me', 'fine',])
 
 # Set up MediaPipe Holistic model
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
-
-# Augment keypoints by adding random noise
-def augment_keypoints(keypoints):
-    noise = np.random.normal(0, 0.01, keypoints.shape)
-    return keypoints + noise
-
-# Normalize the keypoints
-def normalize_keypoints(keypoints):
-    return (keypoints - np.mean(keypoints)) / np.std(keypoints)
-
-# Smooth the keypoints using a moving average
-def smooth_keypoints(keypoints_list, window_size=5):
-    smoothed_keypoints = []
-    for i in range(len(keypoints_list)):
-        start = max(0, i - window_size // 2)
-        end = min(len(keypoints_list), i + window_size // 2 + 1)
-        smoothed_keypoints.append(np.mean(keypoints_list[start:end], axis=0))
-    return smoothed_keypoints
 
 # Function to perform mediapipe detection
 def mediapipe_detection(image, model):
@@ -44,15 +33,18 @@ def mediapipe_detection(image, model):
 
 # Function to draw landmarks
 def draw_landmarks(image, results):
-    mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_holistic.POSE_CONNECTIONS)
+    mp_drawing.draw_landmarks(image, results.pose_landmarks)
     mp_drawing.draw_landmarks(image, results.left_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
     mp_drawing.draw_landmarks(image, results.right_hand_landmarks, mp_holistic.HAND_CONNECTIONS)
 
 # Function to extract keypoints and reduce dimensionality
 def extract_keypoints(results):
-    pose = np.array([[res.x, res.y, res.z, res.visibility] for res in results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(132)
-    lh = np.array([[res.x, res.y, res.z] for res in results.left_hand_landmarks.landmark]).flatten() if results.left_hand_landmarks else np.zeros(21 * 3)
-    rh = np.array([[res.x, res.y, res.z] for res in results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(21 * 3)
+    pose = np.array([[res.x, res.y, res.z, res.visibility] for res in
+                     results.pose_landmarks.landmark]).flatten() if results.pose_landmarks else np.zeros(132)
+    lh = np.array([[res.x, res.y, res.z] for res in
+                   results.left_hand_landmarks.landmark]).flatten() if results.left_hand_landmarks else np.zeros(21 * 3)
+    rh = np.array([[res.x, res.y, res.z] for res in
+                   results.right_hand_landmarks.landmark]).flatten() if results.right_hand_landmarks else np.zeros(21 * 3)
     return np.concatenate([pose, lh, rh])
 
 # Paths for the videos
@@ -97,20 +89,14 @@ for action_folder in os.listdir(VIDEOS_PATH):
                         # Extract keypoints and make predictions
                         keypoints = extract_keypoints(results)
 
-                        # Augment and normalize keypoints
-                        augmented_keypoints = augment_keypoints(keypoints)
-                        normalized_keypoints = normalize_keypoints(augmented_keypoints)
+                        # Normalize keypoints using global mean and std
+                        normalized_keypoints = normalize_keypoints(keypoints)
 
                         sequence.append(normalized_keypoints)
 
                         # Ensure the sequence is exactly SEQUENCE_LENGTH (100 frames)
                         if len(sequence) > SEQUENCE_LENGTH:
                             sequence = sequence[-SEQUENCE_LENGTH:]  # Keep the last 100 frames
-
-                        # If fewer than SEQUENCE_LENGTH frames, pad the sequence by repeating the last frame
-                        if len(sequence) < SEQUENCE_LENGTH:
-                            while len(sequence) < SEQUENCE_LENGTH:
-                                sequence.append(sequence[-1])
 
                         # Only predict if the sequence length matches the model's expected input length
                         if len(sequence) == SEQUENCE_LENGTH:
