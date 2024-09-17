@@ -12,7 +12,7 @@ VIDEOS_PATH = 'videos'  # Path to the folder containing your videos
 FIXED_RESOLUTION = (640, 480)  # Example resolution (width, height)
 
 # Hyperparameters for tuning
-SEQUENCE_LENGTH = 100  # You can experiment with this for longer sequences
+SEQUENCE_LENGTH = 30  # You can experiment with this for longer sequences
 
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils

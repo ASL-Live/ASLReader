@@ -16,7 +16,7 @@ def normalize_keypoints(keypoints):
     return (keypoints - global_mean) / global_std
 
 # Actions the model was trained on
-actions = np.array(['busy', 'deaf', 'excuse me', 'fine',])
+actions = np.array(['dad', 'food', 'meet', 'tomorrow',])
 
 # Set up MediaPipe Holistic model
 mp_holistic = mp.solutions.holistic

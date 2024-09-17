@@ -14,7 +14,7 @@ def normalize_keypoints(keypoints):
     return (keypoints - global_mean) / global_std
 
 # Actions the model was trained on
-actions = np.array(['busy', 'deaf', 'excuse me', 'fine',])
+actions = np.array(['dad', 'food', 'tomorrow'])
 
 # Set up MediaPipe Holistic model
 mp_holistic = mp.solutions.holistic
@@ -51,8 +51,8 @@ FIXED_RESOLUTION = (640, 480)  # Width, Height
 # Initialize variables for real-time detection
 sequence = []
 predictions = []
-threshold = 0.7
-SEQUENCE_LENGTH = 100  # The model expects 100 frames per sequence
+threshold = 0.5
+SEQUENCE_LENGTH = 30  # The model expects 50 frames per sequence
 detected_action = ""  # Variable to store the last detected action
 
 # Open the webcam (usually device index 0)
